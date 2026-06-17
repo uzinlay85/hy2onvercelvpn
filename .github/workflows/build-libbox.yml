@@ -1,0 +1,117 @@
+name: "🔧 Step 1 — Build libbox.aar (sing-box native library)"
+
+on:
+  workflow_dispatch:   # Manual trigger from GitHub Actions tab
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/build-libbox.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  build-libbox:
+    name: Build libbox.aar on Ubuntu
+    runs-on: ubuntu-latest
+
+    steps:
+      # ── 1. Checkout ──────────────────────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      # ── 2. Go ─────────────────────────────────────────────────────────────
+      - name: Set up Go 1.22
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+          cache: false
+
+      # ── 3. Java (needed for Android toolchain) ────────────────────────────
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      # ── 4. Android SDK + NDK ──────────────────────────────────────────────
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android NDK r25c
+        run: |
+          yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager \
+            "ndk;25.2.9519653" 2>/dev/null || true
+          echo "ANDROID_NDK_HOME=$ANDROID_SDK_ROOT/ndk/25.2.9519653" >> $GITHUB_ENV
+
+      # ── 5. gomobile ──────────────────────────────────────────────────────
+      - name: Install gomobile & gobind
+        run: |
+          go install golang.org/x/mobile/cmd/gomobile@latest
+          go install golang.org/x/mobile/cmd/gobind@latest
+          echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
+
+      - name: Initialize gomobile
+        run: |
+          ANDROID_NDK_HOME=${{ env.ANDROID_NDK_HOME }} gomobile init
+
+      # ── 6. Clone sing-box (stable tag) ────────────────────────────────────
+      - name: Clone sing-box source
+        run: |
+          # Try latest stable, fall back to default branch
+          git clone --depth 1 --branch v1.10.5 \
+            https://github.com/SagerNet/sing-box.git sing-box-src 2>/dev/null || \
+          git clone --depth 1 \
+            https://github.com/SagerNet/sing-box.git sing-box-src
+
+          echo "Cloned sing-box at: $(git -C sing-box-src describe --tags --always)"
+
+      # ── 7. Build libbox.aar ───────────────────────────────────────────────
+      - name: Build libbox.aar via gomobile bind
+        env:
+          ANDROID_NDK_HOME: ${{ env.ANDROID_NDK_HOME }}
+        run: |
+          mkdir -p android/app/libs
+          cd sing-box-src
+
+          # Ensure deps
+          go mod download
+
+          # Build for all common Android ABIs
+          gomobile bind \
+            -target=android/arm64,android/arm,android/amd64,android/386 \
+            -androidapi=26 \
+            -javapkg=io.nekohasekai.libbox \
+            -ldflags="-s -w" \
+            -o ../android/app/libs/libbox.aar \
+            ./mobile
+
+      # ── 8. Verify ─────────────────────────────────────────────────────────
+      - name: Verify artifact
+        run: |
+          ls -lh android/app/libs/libbox.aar
+          echo "✅ libbox.aar built successfully"
+
+      # ── 9. Commit back to repo ────────────────────────────────────────────
+      - name: Commit libbox.aar
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add android/app/libs/libbox.aar
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "ci: build libbox.aar from sing-box [skip ci]"
+            git push
+            echo "✅ libbox.aar committed and pushed"
+          fi
+
+      # ── 10. Also upload as downloadable artifact ──────────────────────────
+      - name: Upload libbox.aar as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: libbox-aar
+          path: android/app/libs/libbox.aar
+          retention-days: 30

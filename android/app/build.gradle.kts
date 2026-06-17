@@ -144,7 +144,8 @@ dependencies {
     implementation(libs.okhttp)
     implementation(libs.okhttp.logging)
 
-
+    // Sing-box Native Engine
+    implementation(files("libs/libbox.aar"))
 
     // DataStore
     implementation(libs.datastore.preferences)

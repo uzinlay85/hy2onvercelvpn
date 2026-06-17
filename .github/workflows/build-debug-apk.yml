@@ -1,0 +1,90 @@
+name: "📱 Step 2 — Build Debug APK"
+
+on:
+  workflow_dispatch:   # Manual trigger
+  workflow_run:
+    workflows: ["🔧 Step 1 — Build libbox.aar (sing-box native library)"]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build-apk:
+    name: Build Debug APK
+    runs-on: ubuntu-latest
+    # Only run if the libbox workflow succeeded (or if triggered manually)
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+
+    steps:
+      # ── 1. Checkout ──────────────────────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          # Pull latest (which includes the committed libbox.aar)
+          ref: main
+
+      # ── 2. Verify libbox.aar exists ───────────────────────────────────────
+      - name: Check libbox.aar
+        run: |
+          if [ ! -f "android/app/libs/libbox.aar" ]; then
+            echo "❌ libbox.aar not found!"
+            echo "Please run the '🔧 Step 1 — Build libbox.aar' workflow first."
+            exit 1
+          fi
+          echo "✅ libbox.aar found: $(ls -lh android/app/libs/libbox.aar | awk '{print $5}')"
+
+      # ── 3. JDK ───────────────────────────────────────────────────────────
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      # ── 4. Gradle cache ───────────────────────────────────────────────────
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ hashFiles('android/**/*.gradle*', 'android/**/libs.versions.toml') }}
+          restore-keys: gradle-
+
+      # ── 5. Build APK ──────────────────────────────────────────────────────
+      - name: Build Debug APK
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew :app:assembleDebug \
+            --no-daemon \
+            --stacktrace \
+            -Dfile.encoding=UTF-8
+
+      # ── 6. Rename APK ────────────────────────────────────────────────────
+      - name: Rename APK
+        run: |
+          APK_PATH="android/app/build/outputs/apk/debug/app-debug.apk"
+          NEW_NAME="SafeNet-VPN-debug-$(date +%Y%m%d-%H%M).apk"
+          cp "$APK_PATH" "$NEW_NAME"
+          echo "APK_FILE=$NEW_NAME" >> $GITHUB_ENV
+          ls -lh "$NEW_NAME"
+
+      # ── 7. Upload ─────────────────────────────────────────────────────────
+      - name: Upload Debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: SafeNet-VPN-debug
+          path: ${{ env.APK_FILE }}
+          retention-days: 14
+
+      - name: Print download instructions
+        run: |
+          echo ""
+          echo "✅ APK Build Complete!"
+          echo "📥 Download: Go to GitHub → Actions → This run → Artifacts section"
+          echo "📱 Install: adb install SafeNet-VPN-debug-*.apk"
+          echo ""
