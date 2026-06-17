@@ -69,6 +69,18 @@
             </intent-filter>
         </receiver>
 
+        <!-- ── Built-in VPN Tunnel Service ──────────────────────────────── -->
+        <service
+            android:name=".core.vpn.VpnTunnelService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse"
+            android:permission="android.permission.BIND_VPN_SERVICE">
+            <intent-filter>
+                <action android:name="android.net.VpnService" />
+            </intent-filter>
+        </service>
+
+
         <!-- Remove WorkManager's default initializer; SafeNetApplication provides Hilt config. -->
         <provider
             android:name="androidx.startup.InitializationProvider"

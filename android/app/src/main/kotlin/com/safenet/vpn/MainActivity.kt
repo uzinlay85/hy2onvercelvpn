@@ -1,16 +1,19 @@
 package com.safenet.vpn
 
 import android.Manifest
+import android.app.Activity
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
+import android.net.VpnService
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.compose.foundation.layout.fillMaxSize
@@ -29,7 +32,7 @@ import javax.inject.Inject
 
 /**
  * Main entry point of the SafeNet VPN application.
- * All navigation is handled by [SafeNetNavGraph].
+ * Handles VPN permission dialog via [vpnPermissionLauncher].
  */
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -37,6 +40,17 @@ class MainActivity : ComponentActivity() {
 
     private var themeMode by mutableStateOf(ThemeMode.SYSTEM)
     private var openNotifications by mutableStateOf(false)
+
+    // Callback set by SafeNetNavGraph/HomeScreen when VPN permission is needed
+    var onVpnPermissionResult: ((Boolean) -> Unit)? = null
+
+    val vpnPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        onVpnPermissionResult?.invoke(result.resultCode == Activity.RESULT_OK)
+        onVpnPermissionResult = null
+    }
+
     private val settingsReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             if (intent?.action == AppSettingsManager.ACTION_SETTINGS_CHANGED) {
@@ -95,7 +109,6 @@ class MainActivity : ComponentActivity() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) {
             return
         }
-
         ActivityCompat.requestPermissions(
             this,
             arrayOf(Manifest.permission.POST_NOTIFICATIONS),

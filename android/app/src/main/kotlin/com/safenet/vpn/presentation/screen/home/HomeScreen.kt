@@ -19,10 +19,12 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.safenet.vpn.MainActivity
 import com.safenet.vpn.presentation.viewmodel.HomeViewModel
 import com.safenet.vpn.domain.model.VpnState
 
@@ -34,6 +36,20 @@ fun HomeScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var showServerSelector by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+
+    // Handle VPN permission request from ViewModel
+    LaunchedEffect(uiState.needsVpnPermission) {
+        if (uiState.needsVpnPermission) {
+            val activity = context as? MainActivity ?: return@LaunchedEffect
+            val intent = android.net.VpnService.prepare(context) ?: return@LaunchedEffect
+            activity.onVpnPermissionResult = { granted ->
+                if (granted) viewModel.onVpnPermissionGranted()
+                else viewModel.onVpnPermissionDenied()
+            }
+            activity.vpnPermissionLauncher.launch(intent)
+        }
+    }
 
     // Theme Colors (Dark Mode Glassmorphism)
     val bgColor = Color(0xFF0F172A) // Slate 900
