@@ -31,6 +31,7 @@ android {
         // Build config fields for runtime configuration
         buildConfigField("String", "API_BASE_URL", "\"https://safenetapp.truehand.top/api/v1\"")
         buildConfigField("String", "WS_BASE_URL", "\"wss://safenetapp.truehand.top\"")
+        buildConfigField("String", "VERCEL_API_URL", "\"https://hy2onvercelvpn.vercel.app/api/\"")
         buildConfigField("String", "API_CERT_PIN_SHA256", quotedBuildConfigString(safenetApiCertPin))
         buildConfigField("String", "APP_NAME", "\"SafeNet VPN\"")
     }
@@ -49,6 +50,7 @@ android {
             isDebuggable = true
             buildConfigField("String", "API_BASE_URL", "\"https://safenetapp.truehand.top/api/v1\"")
             buildConfigField("String", "WS_BASE_URL", "\"wss://safenetapp.truehand.top\"")
+            buildConfigField("String", "VERCEL_API_URL", "\"https://hy2onvercelvpn.vercel.app/api/\"")
             buildConfigField("String", "API_CERT_PIN_SHA256", "\"\"")
             buildConfigField("Boolean", "DEBUG_MODE", "true")
         }
@@ -62,6 +64,7 @@ android {
             // Optional hardening: pass SAFENET_API_CERT_PIN_SHA256=sha256/... for TLS pinning.
             // Android Studio release builds stay usable when the pin is not configured.
             buildConfigField("String", "API_CERT_PIN_SHA256", quotedBuildConfigString(safenetApiCertPin))
+            buildConfigField("String", "VERCEL_API_URL", "\"https://hy2onvercelvpn.vercel.app/api/\"")
             buildConfigField("Boolean", "DEBUG_MODE", "false")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),

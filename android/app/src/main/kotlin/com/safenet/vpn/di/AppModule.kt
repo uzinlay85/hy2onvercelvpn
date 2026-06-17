@@ -18,6 +18,7 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.net.URI
 import java.util.concurrent.TimeUnit
+import javax.inject.Named
 import javax.inject.Singleton
 
 @Module
@@ -108,5 +109,29 @@ object AppModule {
     @Singleton
     fun provideApiService(retrofit: Retrofit): SafeNetApiService {
         return retrofit.create(SafeNetApiService::class.java)
+    }
+
+    // ── Vercel API ────────────────────────────────────────────────────────────
+    @Provides
+    @Singleton
+    @Named("vercel")
+    fun provideVercelRetrofit(): Retrofit {
+        val cleanClient = OkHttpClient.Builder()
+            .connectTimeout(30, TimeUnit.SECONDS)
+            .readTimeout(30, TimeUnit.SECONDS)
+            .writeTimeout(30, TimeUnit.SECONDS)
+            .build()
+            
+        return Retrofit.Builder()
+            .baseUrl(BuildConfig.VERCEL_API_URL)
+            .client(cleanClient)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+    }
+
+    @Provides
+    @Singleton
+    fun provideVercelApiService(@Named("vercel") retrofit: Retrofit): com.safenet.vpn.data.remote.VercelApiService {
+        return retrofit.create(com.safenet.vpn.data.remote.VercelApiService::class.java)
     }
 }

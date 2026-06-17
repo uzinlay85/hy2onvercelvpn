@@ -44,22 +44,22 @@ fun HomeScreen(
     Scaffold(
         containerColor = bgColor,
         topBar = {
-            CenterAlignedTopAppBar(
-                title = { 
-                    Text("SafeNet Free", 
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
-                    ) 
-                },
-                actions = {
-                    IconButton(onClick = onNavigateToSettings) {
-                        Icon(Icons.Default.Settings, contentDescription = "Settings", tint = Color.White)
-                    }
-                },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = Color.Transparent
+            // Top Bar
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    "SafeNet",
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
                 )
-            )
+                IconButton(onClick = onNavigateToSettings) {
+                    Icon(Icons.Default.Settings, contentDescription = "Settings", tint = Color.White)
+                }
+            }
         }
     ) { paddingValues ->
         Box(
@@ -78,6 +78,21 @@ fun HomeScreen(
                 verticalArrangement = Arrangement.Center,
                 modifier = Modifier.fillMaxWidth()
             ) {
+                if (uiState.errorMessage != null) {
+                    Text(
+                        text = uiState.errorMessage!!,
+                        color = Color(0xFFEF4444),
+                        modifier = Modifier.padding(16.dp)
+                    )
+                    Button(
+                        onClick = { viewModel.fetchServers() },
+                        colors = ButtonDefaults.buttonColors(containerColor = accentColor),
+                        modifier = Modifier.padding(bottom = 24.dp)
+                    ) {
+                        Text("Retry")
+                    }
+                }
+                
                 // Connection Status Text
                 Text(
                     text = when(uiState.vpnState) {
@@ -143,8 +158,10 @@ fun HomeScreen(
                         modifier = Modifier.padding(bottom = 16.dp)
                     )
                     
-                    if (uiState.availableServers.isEmpty()) {
+                    if (uiState.availableServers.isEmpty() && uiState.errorMessage == null) {
                         CircularProgressIndicator(color = accentColor, modifier = Modifier.align(Alignment.CenterHorizontally))
+                    } else if (uiState.availableServers.isEmpty() && uiState.errorMessage != null) {
+                        Text("No servers available.", color = Color.Gray)
                     } else {
                         uiState.availableServers.forEach { server ->
                             ServerItem(
@@ -244,13 +261,16 @@ fun ConnectButton(
             }
             
             // Icon or Text
-            Text(
-                text = if (isConnected) "STOP" else "START",
-                color = Color.White,
-                fontSize = 24.sp,
-                fontWeight = FontWeight.ExtraBold,
-                letterSpacing = 2.sp
-            )
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    text = if (isConnected) "CONNECTED" else "OPEN IN\nVPN APP",
+                    color = Color.White,
+                    fontSize = if (isConnected) 20.sp else 18.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    letterSpacing = 1.sp,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                )
+            }
         }
     }
 }

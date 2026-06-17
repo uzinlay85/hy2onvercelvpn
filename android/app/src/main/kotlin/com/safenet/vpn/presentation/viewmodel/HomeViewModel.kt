@@ -11,6 +11,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import com.safenet.vpn.data.remote.VercelApiService
+import com.safenet.vpn.core.vpn.VpnLaunchManager
 
 data class FreeServer(
     val id: String,
@@ -29,7 +31,8 @@ data class HomeUiState(
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
-    // Placeholder for actual VPN Manager/Service
+    private val vercelApiService: VercelApiService,
+    private val vpnLaunchManager: VpnLaunchManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState())
@@ -40,21 +43,27 @@ class HomeViewModel @Inject constructor(
         fetchServers()
     }
 
-    private fun fetchServers() {
+    fun fetchServers() {
         viewModelScope.launch {
-            // TODO: Replace with actual Retrofit call to Vercel API
-            delay(1000)
-            val mockServers = listOf(
-                FreeServer("1", "Hysteria2 Singapore", "HYSTERIA2", "hysteria2://..."),
-                FreeServer("2", "VLESS Japan", "VLESS", "vless://..."),
-                FreeServer("3", "Outline USA", "OUTLINE", "ss://...")
-            )
-            _uiState.update { 
-                it.copy(
-                    availableServers = mockServers,
-                    selectedServerId = mockServers.first().id,
-                    selectedServerName = mockServers.first().name
-                )
+            try {
+                val res = vercelApiService.getServers()
+                if (res.isSuccessful && res.body()?.success == true) {
+                    val dtos = res.body()?.servers ?: emptyList()
+                    val domainServers = dtos.map {
+                        FreeServer(it.id, it.name, it.protocol, it.config)
+                    }
+                    _uiState.update { 
+                        it.copy(
+                            availableServers = domainServers,
+                            selectedServerId = domainServers.firstOrNull()?.id ?: "",
+                            selectedServerName = domainServers.firstOrNull()?.name ?: "No Server"
+                        )
+                    }
+                } else {
+                    _uiState.update { it.copy(errorMessage = "Failed to load servers") }
+                }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(errorMessage = "Network error: ${e.message}") }
             }
         }
     }
@@ -72,10 +81,22 @@ class HomeViewModel @Inject constructor(
     }
 
     fun connect() {
+        val serverId = _uiState.value.selectedServerId
+        val server = _uiState.value.availableServers.find { it.id == serverId } ?: return
+
         viewModelScope.launch {
             _uiState.update { it.copy(vpnState = VpnState.CONNECTING) }
-            delay(1500) // Simulate connection delay
-            _uiState.update { it.copy(vpnState = VpnState.CONNECTED) }
+            
+            // Launch VPN app using Intent
+            val success = vpnLaunchManager.launchVpnApp(server.protocol, server.config)
+            
+            if (success) {
+                // Keep state CONNECTED for visual feedback, though actual VPN is external
+                _uiState.update { it.copy(vpnState = VpnState.CONNECTED) }
+            } else {
+                // If it failed to launch (fallback to copy), we reset state
+                _uiState.update { it.copy(vpnState = VpnState.DISCONNECTED) }
+            }
         }
     }
 
