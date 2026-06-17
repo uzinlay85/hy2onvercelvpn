@@ -13,34 +13,39 @@ module.exports = function handler(req, res) {
     return;
   }
 
-  // Extract keys from Environment Variables
-  // In Vercel, you'll need to set these in the Project Settings -> Environment Variables
-  const hysteria2Key = process.env.HYSTERIA2_KEY || 'hysteria2://dummy_key?sni=example.com';
-  const vlessKey = process.env.VLESS_KEY || 'vless://dummy_key@example.com:443?encryption=none&security=tls';
-  const outlineKey = process.env.OUTLINE_KEY || 'ss://dummy_key@example.com:443#Outline';
+  // Dynamically extract servers from Environment Variables
+  const servers = [];
+  
+  for (const [key, value] of Object.entries(process.env)) {
+    // Only process variables that contain a VPN URI scheme
+    if (value && typeof value === 'string' && value.includes('://')) {
+      const protocolMatch = value.split('://')[0].toUpperCase();
+      
+      // Clean up the key to use as the server name (e.g., "SG_SERVER_1" -> "SG SERVER 1")
+      const serverName = key.replace(/_/g, ' ');
+
+      servers.push({
+        id: key.toLowerCase(),
+        name: serverName,
+        protocol: protocolMatch,
+        config: value
+      });
+    }
+  }
+
+  // If no valid environment variables are found, provide a fallback dummy server
+  if (servers.length === 0) {
+    servers.push({
+      id: 'dummy-1',
+      name: 'No Server Found (Add Env Var in Vercel)',
+      protocol: 'UNKNOWN',
+      config: 'unknown://dummy'
+    });
+  }
 
   // Return as JSON for the Android App
   res.status(200).json({
     success: true,
-    servers: [
-      {
-        id: 'hysteria2-1',
-        name: 'Hysteria2 Free Server',
-        protocol: 'HYSTERIA2',
-        config: hysteria2Key
-      },
-      {
-        id: 'vless-1',
-        name: 'VLESS Free Server',
-        protocol: 'VLESS',
-        config: vlessKey
-      },
-      {
-        id: 'outline-1',
-        name: 'Outline Free Server',
-        protocol: 'OUTLINE',
-        config: outlineKey
-      }
-    ]
+    servers: servers
   });
 }
