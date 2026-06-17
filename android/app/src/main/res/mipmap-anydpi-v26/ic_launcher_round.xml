@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Outer shield outline with gradient stroke -->
+    <path
+        android:pathData="M54,12 L24,25 L24,55 C24,78.5 54,96 54,96 C54,96 84,78.5 84,55 L84,25 Z"
+        android:strokeWidth="3.5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round">
+        <aapt:attr name="android:strokeColor">
+            <gradient
+                android:startX="24"
+                android:startY="12"
+                android:endX="84"
+                android:endY="96"
+                android:type="linear">
+                <item android:offset="0.0" android:color="#FF00F0FF" />
+                <item android:offset="1.0" android:color="#FF0072FF" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Inner solid shield with gradient fill -->
+    <path
+        android:pathData="M54,20 L30,30.8 L30,55 C30,73.8 54,87.8 54,87.8 C54,87.8 78,73.8 78,55 L78,30.8 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="30"
+                android:startY="20"
+                android:endX="78"
+                android:endY="87.8"
+                android:type="linear">
+                <item android:offset="0.0" android:color="#1A00F0FF" />
+                <item android:offset="1.0" android:color="#1A0072FF" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Glowing lock in the center -->
+    <!-- Lock Shackle -->
+    <path
+        android:pathData="M44,48 V42 C44,36.5 48.5,32 54,32 C59.5,32 64,36.5 64,42 V48"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round">
+        <aapt:attr name="android:strokeColor">
+            <gradient
+                android:startX="44"
+                android:startY="32"
+                android:endX="64"
+                android:endY="48"
+                android:type="linear">
+                <item android:offset="0.0" android:color="#FF00F0FF" />
+                <item android:offset="1.0" android:color="#FF0072FF" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Lock Body -->
+    <path
+        android:pathData="M38,48 H70 C72.2,48 74,49.8 74,52 V66 C74,68.2 72.2,70 70,70 H38 C35.8,70 34,68.2 34,66 V52 C34,49.8 35.8,48 38,48 Z"
+        android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="34"
+                android:startY="48"
+                android:endX="74"
+                android:endY="70"
+                android:type="linear">
+                <item android:offset="0.0" android:color="#FF00F2FE" />
+                <item android:offset="1.0" android:color="#FF4FACFE" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Keyhole -->
+    <path
+        android:pathData="M54,54 A3,3 0 1,0 54,60 A3,3 0 1,0 54,54 M54,60 L54,65"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round" />
+</vector>

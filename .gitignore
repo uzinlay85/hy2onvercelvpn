@@ -1,0 +1,46 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Runtime data / Node
+node_modules
+dist
+build
+.next
+
+# Database / Docker / Secrets
+.env
+.env*.local
+postgres_data
+redis_data
+*.pem
+*.key
+*.crt
+
+# OS metadata
+.DS_Store
+Thumbs.db
+
+# Compiled prisma seeds
+backend/prisma/seed.js
+backend/prisma/reset-admin.js
+
+# Local Android build homes used by Codex/Gradle
+android/.android-home/
+android/.gradle-home/
+android/.user-home/
+
+# Android Gradle generated / cache files
+android/.gradle/
+android/.idea/gradle.xml
+android/.idea/misc.xml
+android/.idea/vcs.xml
+android/app/build/
+android/build/
+
+# Admin panel build artifacts
+admin-panel/tsconfig.tsbuildinfo
+admin-panel/next-env.d.ts

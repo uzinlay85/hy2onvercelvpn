@@ -1,0 +1,55 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 1,
+    "identityHash": "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4",
+    "entities": [
+      {
+        "tableName": "cached_servers",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `countryCode` TEXT NOT NULL, `countryName` TEXT NOT NULL, `city` TEXT, `host` TEXT NOT NULL, `port` INTEGER NOT NULL, `protocols` TEXT NOT NULL, `latencyMs` INTEGER NOT NULL, `loadPercent` INTEGER NOT NULL, `isRecommended` INTEGER NOT NULL, `isPremium` INTEGER NOT NULL, `status` TEXT NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          { "fieldPath": "id", "columnName": "id", "affinity": "TEXT", "notNull": true },
+          { "fieldPath": "name", "columnName": "name", "affinity": "TEXT", "notNull": true },
+          { "fieldPath": "countryCode", "columnName": "countryCode", "affinity": "TEXT", "notNull": true },
+          { "fieldPath": "countryName", "columnName": "countryName", "affinity": "TEXT", "notNull": true },
+          { "fieldPath": "city", "columnName": "city", "affinity": "TEXT", "notNull": false },
+          { "fieldPath": "host", "columnName": "host", "affinity": "TEXT", "notNull": true },
+          { "fieldPath": "port", "columnName": "port", "affinity": "INTEGER", "notNull": true },
+          { "fieldPath": "protocols", "columnName": "protocols", "affinity": "TEXT", "notNull": true },
+          { "fieldPath": "latencyMs", "columnName": "latencyMs", "affinity": "INTEGER", "notNull": true },
+          { "fieldPath": "loadPercent", "columnName": "loadPercent", "affinity": "INTEGER", "notNull": true },
+          { "fieldPath": "isRecommended", "columnName": "isRecommended", "affinity": "INTEGER", "notNull": true },
+          { "fieldPath": "isPremium", "columnName": "isPremium", "affinity": "INTEGER", "notNull": true },
+          { "fieldPath": "status", "columnName": "status", "affinity": "TEXT", "notNull": true }
+        ],
+        "primaryKey": { "autoGenerate": false, "columnNames": ["id"] },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "cached_keys",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `name` TEXT, `protocol` TEXT NOT NULL, `serverId` TEXT, `status` TEXT NOT NULL, `expiresAt` INTEGER, `trafficLimitBytes` INTEGER NOT NULL, `usedTrafficBytes` INTEGER NOT NULL, `deviceLimit` INTEGER NOT NULL, `configPayload` TEXT, PRIMARY KEY(`id`))",
+        "fields": [
+          { "fieldPath": "id", "columnName": "id", "affinity": "TEXT", "notNull": true },
+          { "fieldPath": "name", "columnName": "name", "affinity": "TEXT", "notNull": false },
+          { "fieldPath": "protocol", "columnName": "protocol", "affinity": "TEXT", "notNull": true },
+          { "fieldPath": "serverId", "columnName": "serverId", "affinity": "TEXT", "notNull": false },
+          { "fieldPath": "status", "columnName": "status", "affinity": "TEXT", "notNull": true },
+          { "fieldPath": "expiresAt", "columnName": "expiresAt", "affinity": "INTEGER", "notNull": false },
+          { "fieldPath": "trafficLimitBytes", "columnName": "trafficLimitBytes", "affinity": "INTEGER", "notNull": true },
+          { "fieldPath": "usedTrafficBytes", "columnName": "usedTrafficBytes", "affinity": "INTEGER", "notNull": true },
+          { "fieldPath": "deviceLimit", "columnName": "deviceLimit", "affinity": "INTEGER", "notNull": true },
+          { "fieldPath": "configPayload", "columnName": "configPayload", "affinity": "TEXT", "notNull": false }
+        ],
+        "primaryKey": { "autoGenerate": false, "columnNames": ["id"] },
+        "indices": [],
+        "foreignKeys": []
+      }
+    ],
+    "views": [],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4')"
+    ]
+  }
+}
