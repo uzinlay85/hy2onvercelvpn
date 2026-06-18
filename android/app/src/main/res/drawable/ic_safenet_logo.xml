@@ -8,82 +8,121 @@
 
     <!-- Outer shield outline with gradient stroke -->
     <path
-        android:pathData="M54,12 L24,25 L24,55 C24,78.5 54,96 54,96 C54,96 84,78.5 84,55 L84,25 Z"
+        android:pathData="M 54,24 C 65,24 78,30 78,30 L 78,54 C 78,71 54,84 54,84 C 54,84 30,71 30,54 L 30,30 C 30,30 43,24 54,24 Z"
         android:strokeWidth="3.5"
         android:strokeLineCap="round"
-        android:strokeLineJoin="round">
+        android:strokeLineJoin="round"
+        android:fillColor="#151718">
         <aapt:attr name="android:strokeColor">
-            <gradient
-                android:startX="24"
-                android:startY="12"
-                android:endX="84"
-                android:endY="96"
-                android:type="linear">
-                <item android:offset="0.0" android:color="#FF00F0FF" />
-                <item android:offset="1.0" android:color="#FF0072FF" />
-            </gradient>
-        </aapt:attr>
-    </path>
-
-    <!-- Inner solid shield with gradient fill -->
-    <path
-        android:pathData="M54,20 L30,30.8 L30,55 C30,73.8 54,87.8 54,87.8 C54,87.8 78,73.8 78,55 L78,30.8 Z">
-        <aapt:attr name="android:fillColor">
             <gradient
                 android:startX="30"
-                android:startY="20"
+                android:startY="24"
                 android:endX="78"
-                android:endY="87.8"
+                android:endY="84"
                 android:type="linear">
-                <item android:offset="0.0" android:color="#1A00F0FF" />
-                <item android:offset="1.0" android:color="#1A0072FF" />
+                <item android:offset="0.0" android:color="#FF7C3AED" /> <!-- Violet -->
+                <item android:offset="0.5" android:color="#FF3B82F6" /> <!-- Blue -->
+                <item android:offset="1.0" android:color="#FF06B6D4" /> <!-- Cyan -->
             </gradient>
         </aapt:attr>
     </path>
 
-    <!-- Glowing lock in the center -->
-    <!-- Lock Shackle -->
+    <!-- Inner glow elements (Left Wing) -->
     <path
-        android:pathData="M44,48 V42 C44,36.5 48.5,32 54,32 C59.5,32 64,36.5 64,42 V48"
-        android:strokeWidth="4"
-        android:strokeLineCap="round"
-        android:strokeLineJoin="round">
-        <aapt:attr name="android:strokeColor">
-            <gradient
-                android:startX="44"
-                android:startY="32"
-                android:endX="64"
-                android:endY="48"
-                android:type="linear">
-                <item android:offset="0.0" android:color="#FF00F0FF" />
-                <item android:offset="1.0" android:color="#FF0072FF" />
-            </gradient>
-        </aapt:attr>
-    </path>
-
-    <!-- Lock Body -->
-    <path
-        android:pathData="M38,48 H70 C72.2,48 74,49.8 74,52 V66 C74,68.2 72.2,70 70,70 H38 C35.8,70 34,68.2 34,66 V52 C34,49.8 35.8,48 38,48 Z"
+        android:pathData="M 48,33 C 44,35 38,38 38,38 L 38,54 C 38,65 51,73 54,75"
         android:strokeWidth="3"
         android:strokeLineCap="round"
         android:strokeLineJoin="round">
-        <aapt:attr name="android:fillColor">
+        <aapt:attr name="android:strokeColor">
             <gradient
-                android:startX="34"
-                android:startY="48"
-                android:endX="74"
-                android:endY="70"
+                android:startX="38"
+                android:startY="33"
+                android:endX="54"
+                android:endY="75"
                 android:type="linear">
-                <item android:offset="0.0" android:color="#FF00F2FE" />
-                <item android:offset="1.0" android:color="#FF4FACFE" />
+                <item android:offset="0.0" android:color="#608B5CF6" /> <!-- Semi-transparent Violet -->
+                <item android:offset="1.0" android:color="#6006B6D4" /> <!-- Semi-transparent Cyan -->
             </gradient>
         </aapt:attr>
     </path>
 
-    <!-- Keyhole -->
+    <!-- Inner glow elements (Right Wing) -->
     <path
-        android:pathData="M54,54 A3,3 0 1,0 54,60 A3,3 0 1,0 54,54 M54,60 L54,65"
-        android:strokeColor="#FFFFFF"
+        android:pathData="M 60,33 C 64,35 70,38 70,38 L 70,54 C 70,65 57,73 54,75"
+        android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round">
+        <aapt:attr name="android:strokeColor">
+            <gradient
+                android:startX="70"
+                android:startY="33"
+                android:endX="54"
+                android:endY="75"
+                android:type="linear">
+                <item android:offset="0.0" android:color="#608B5CF6" />
+                <item android:offset="1.0" android:color="#6006B6D4" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Glowing network wave / data connection -->
+    <path
+        android:pathData="M 41,54 C 46,54 51,44 54,44 C 57,44 62,54 67,54"
+        android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round">
+        <aapt:attr name="android:strokeColor">
+            <gradient
+                android:startX="41"
+                android:startY="54"
+                android:endX="67"
+                android:endY="54"
+                android:type="linear">
+                <item android:offset="0.0" android:color="#FF3B82F6" />
+                <item android:offset="1.0" android:color="#FF06B6D4" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Center node (Secure Core) -->
+    <path
+        android:pathData="M 54,45 A 3,3 0 1,0 54,39 A 3,3 0 1,0 54,45"
+        android:fillColor="#FF06B6D4" />
+
+    <!-- Center secure key line -->
+    <path
+        android:pathData="M 54,45 V 62"
         android:strokeWidth="2.5"
-        android:strokeLineCap="round" />
+        android:strokeLineCap="round">
+        <aapt:attr name="android:strokeColor">
+            <gradient
+                android:startX="54"
+                android:startY="45"
+                android:endX="54"
+                android:endY="62"
+                android:type="linear">
+                <item android:offset="0.0" android:color="#FF06B6D4" />
+                <item android:offset="1.0" android:color="#FF3B82F6" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Key baseline notch (Sleek minimalist key detail) -->
+    <path
+        android:pathData="M 51.5,58 H 56.5"
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round">
+        <aapt:attr name="android:strokeColor">
+            <gradient
+                android:startX="51.5"
+                android:startY="58"
+                android:endX="56.5"
+                android:endY="58"
+                android:type="linear">
+                <item android:offset="0.0" android:color="#FF06B6D4" />
+                <item android:offset="1.0" android:color="#FF3B82F6" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
 </vector>

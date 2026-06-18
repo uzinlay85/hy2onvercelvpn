@@ -35,11 +35,6 @@ fun SettingsScreen(
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
 
-    LaunchedEffect(uiState.isLoggedOut) {
-        if (uiState.isLoggedOut) {
-            onBack()
-        }
-    }
 
     Scaffold(
         topBar = {
@@ -107,23 +102,7 @@ fun SettingsScreen(
                 )
             }
 
-            item {
-                Spacer(Modifier.height(24.dp))
-                Button(
-                    onClick = { viewModel.logout() },
-                    modifier = Modifier.fillMaxWidth().height(52.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
-                    shape = RoundedCornerShape(16.dp),
-                ) {
-                    if (uiState.isLoggingOut) {
-                        CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
-                    } else {
-                        Icon(Icons.Default.Logout, contentDescription = null, tint = Color.White)
-                        Spacer(Modifier.width(8.dp))
-                        Text("Log Out Account", fontWeight = FontWeight.Bold, color = Color.White)
-                    }
-                }
-            }
+
         }
     }
 }
@@ -289,44 +268,26 @@ private fun FeaturesCard() {
         AppFeature(
             icon = Icons.Default.Shield,
             iconTint = Color(0xFF6366F1),
-            title = "AmneziaWG Protocol",
-            description = "Obfuscated WireGuard tunnel that bypasses deep-packet inspection.",
+            title = "Sing-box Engine",
+            description = "High-speed VPN protocols including Hysteria2, VLESS, and Trojan.",
         ),
         AppFeature(
-            icon = Icons.Default.Key,
+            icon = Icons.Default.Language,
             iconTint = Color(0xFF0EA5E9),
-            title = "External Key Support",
-            description = "Import and use your own AmneziaWG / WireGuard config (up to 10 keys).",
+            title = "Global Server Nodes",
+            description = "Connect to fast and secure servers worldwide with zero logging.",
         ),
         AppFeature(
-            icon = Icons.Default.Autorenew,
-            iconTint = Color(0xFF22C55E),
-            title = "Auto Reconnect",
-            description = "Detects dead tunnels and restores the connection automatically.",
-        ),
-        AppFeature(
-            icon = Icons.Default.Timer,
-            iconTint = Color(0xFFF59E0B),
-            title = "Persistent Keepalive",
-            description = "Sends keepalive packets every 25 s to stay alive through sleep.",
+            icon = Icons.Default.Speed,
+            iconTint = Color(0xFF10B981),
+            title = "Bypass DPI",
+            description = "Advanced obfuscation to bypass deep-packet inspection.",
         ),
         AppFeature(
             icon = Icons.Default.BarChart,
             iconTint = Color(0xFFEC4899),
             title = "Session Stats",
-            description = "Live connection duration and data-usage counter while connected.",
-        ),
-        AppFeature(
-            icon = Icons.Default.Dns,
-            iconTint = Color(0xFF14B8A6),
-            title = "Multi-Server",
-            description = "Select from multiple VPN servers; best server auto-highlighted.",
-        ),
-        AppFeature(
-            icon = Icons.Default.NotificationsActive,
-            iconTint = Color(0xFFF97316),
-            title = "Push Notifications",
-            description = "Receive server announcements and service alerts in real time.",
+            description = "Real-time logging of your data usage and active tunnel runtime.",
         ),
         AppFeature(
             icon = Icons.Default.PowerSettingsNew,

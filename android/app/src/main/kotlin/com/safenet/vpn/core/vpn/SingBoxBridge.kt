@@ -1,5 +1,7 @@
 package com.safenet.vpn.core.vpn
 
+import android.content.Context
+import android.net.VpnService
 import android.util.Log
 
 /**
@@ -20,16 +22,77 @@ object SingBoxBridge {
      * @param tunFd   File descriptor of the TUN interface (from VpnService.Builder.establish())
      * @param config  sing-box JSON configuration string
      */
-    fun start(tunFd: Int, config: String) {
+    fun start(tunFd: Int, config: String, context: Context) {
         try {
-            // When libbox.aar is integrated, replace this with:
-            // val service = Libbox.newStandaloneService(config, tunFd)
-            // service.start()
-
             // Try to call libbox via reflection (if .aar is loaded)
             val libboxClass = Class.forName("io.nekohasekai.libbox.Libbox")
-            val newServiceMethod = libboxClass.getMethod("newStandaloneService", String::class.java, Int::class.java)
-            val serviceInstance = newServiceMethod.invoke(null, config, tunFd)
+            
+            // Run setup first to initialize paths and running environment for Android user process
+            try {
+                val setupMethod = libboxClass.getMethod(
+                    "setup",
+                    String::class.java,
+                    String::class.java,
+                    String::class.java,
+                    Boolean::class.javaPrimitiveType
+                )
+                val filesDir = context.filesDir.absolutePath
+                val cacheDir = context.cacheDir.absolutePath
+                setupMethod.invoke(null, filesDir, cacheDir, cacheDir, true)
+                Log.i(TAG, "libbox.setup success: filesDir=$filesDir, cacheDir=$cacheDir")
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to call libbox.setup via reflection: ${e.message}", e)
+            }
+
+            val platformInterfaceClass = Class.forName("io.nekohasekai.libbox.PlatformInterface")
+            
+            // Create dynamic proxy to implement PlatformInterface
+            val platformInterface = java.lang.reflect.Proxy.newProxyInstance(
+                libboxClass.classLoader,
+                arrayOf(platformInterfaceClass)
+            ) { _, method, args ->
+                when (method.name) {
+                    "openTun" -> tunFd
+                    "useProcFS" -> true
+                    "includeAllNetworks" -> false
+                    "usePlatformAutoDetectInterfaceControl" -> true
+                    "usePlatformDefaultInterfaceMonitor" -> false
+                    "usePlatformInterfaceGetter" -> false
+                    "underNetworkExtension" -> false
+                    "readWIFIState" -> null
+                    "writeLog" -> { Log.d(TAG, "[Core] ${args?.get(0)}") ; null }
+                    "autoDetectInterfaceControl" -> {
+                        val socketFd = args?.get(0) as? Int
+                        if (socketFd != null) {
+                            val vpnService = context as? VpnService
+                            val success = vpnService?.protect(socketFd) ?: false
+                            if (!success) {
+                                Log.w(TAG, "Failed to protect socket fd=$socketFd")
+                            } else {
+                                Log.d(TAG, "Successfully protected socket fd=$socketFd")
+                            }
+                        }
+                        null
+                    }
+                    else -> {
+                        when (method.returnType) {
+                            Boolean::class.javaPrimitiveType -> false
+                            Int::class.javaPrimitiveType -> 0
+                            Long::class.javaPrimitiveType -> 0L
+                            Short::class.javaPrimitiveType -> 0.toShort()
+                            Byte::class.javaPrimitiveType -> 0.toByte()
+                            Float::class.javaPrimitiveType -> 0f
+                            Double::class.javaPrimitiveType -> 0.0
+                            Char::class.javaPrimitiveType -> '\u0000'
+                            String::class.java -> ""
+                            else -> null
+                        }
+                    }
+                }
+            }
+            
+            val newServiceMethod = libboxClass.getMethod("newService", String::class.java, platformInterfaceClass)
+            val serviceInstance = newServiceMethod.invoke(null, config, platformInterface)
 
             val startMethod = serviceInstance!!.javaClass.getMethod("start")
             startMethod.invoke(serviceInstance)

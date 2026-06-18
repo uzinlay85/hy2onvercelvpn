@@ -19,9 +19,9 @@ object VpnConfigConverter {
      * @param uri The VPN URI (e.g. "hysteria2://...", "vless://...", "ss://...")
      * @return sing-box JSON config, or null on parse failure
      */
-    fun toSingBoxConfig(uri: String): String? {
+    fun toSingBoxConfig(uri: String, cacheFilePath: String): String? {
         return try {
-            when {
+            val rawConfig = when {
                 uri.startsWith("hysteria2://") || uri.startsWith("hy2://") -> buildHysteria2Config(uri)
                 uri.startsWith("vless://") -> buildVlessConfig(uri)
                 uri.startsWith("ss://") -> buildShadowsocksConfig(uri)
@@ -30,7 +30,18 @@ object VpnConfigConverter {
                     Log.w(TAG, "Unknown protocol for URI: $uri")
                     null
                 }
-            }
+            } ?: return null
+
+            // Inject the cache file path dynamically
+            val json = JSONObject(rawConfig)
+            val experimental = json.optJSONObject("experimental") ?: JSONObject()
+            val cacheFile = experimental.optJSONObject("cache_file") ?: JSONObject()
+            cacheFile.put("enabled", true)
+            cacheFile.put("path", cacheFilePath)
+            experimental.put("cache_file", cacheFile)
+            json.put("experimental", experimental)
+
+            json.toString(2)
         } catch (e: Exception) {
             Log.e(TAG, "Failed to parse VPN URI: $uri", e)
             null
@@ -188,10 +199,10 @@ object VpnConfigConverter {
                 put(JSONObject().apply {
                     put("type", "tun")
                     put("tag", "tun-in")
-                    put("inet4_address", "172.19.0.1/30")
-                    put("inet6_address", "fdfe:dcba:9876::1/126")
-                    put("auto_route", true)
-                    put("strict_route", true)
+                    put("inet4_address", JSONArray().apply { put("172.19.0.2/30") })
+                    put("inet6_address", JSONArray().apply { put("fdfe:dcba:9876::2/126") })
+                    put("auto_route", false)
+                    put("strict_route", false)
                     put("sniff", true)
                     put("sniff_override_destination", false)
                 })
@@ -219,13 +230,13 @@ object VpnConfigConverter {
                     })
                 })
                 put("final", "proxy")
-                put("auto_detect_interface", true)
+                put("auto_detect_interface", false)
             })
             put("dns", JSONObject().apply {
                 put("servers", JSONArray().apply {
                     put(JSONObject().apply {
                         put("tag", "remote")
-                        put("address", "tls://1.1.1.1")
+                        put("address", "8.8.8.8")
                         put("detour", "proxy")
                     })
                     put(JSONObject().apply {
@@ -233,7 +244,11 @@ object VpnConfigConverter {
                         put("address", "local")
                     })
                 })
-                put("final", "remote")
+            })
+            put("experimental", JSONObject().apply {
+                put("cache_file", JSONObject().apply {
+                    put("enabled", false)
+                })
             })
         }
         return config.toString(2)

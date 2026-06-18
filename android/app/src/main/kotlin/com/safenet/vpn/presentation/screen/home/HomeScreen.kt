@@ -1,14 +1,15 @@
 package com.safenet.vpn.presentation.screen.home
 
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.*
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.filled.PowerSettingsNew
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -16,9 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -51,89 +50,54 @@ fun HomeScreen(
         }
     }
 
-    // Theme Colors (Dark Mode Glassmorphism)
-    val bgColor = Color(0xFF0F172A) // Slate 900
-    val accentColor = Color(0xFF06B6D4) // Cyan 500
-    val secondaryAccent = Color(0xFF8B5CF6) // Violet 500
-    val surfaceColor = Color(0xFF1E293B).copy(alpha = 0.7f) // Glassy Slate 800
-
     Scaffold(
-        containerColor = bgColor,
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            // Top Bar
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    "SafeNet",
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
-                IconButton(onClick = onNavigateToSettings) {
-                    Icon(Icons.Default.Settings, contentDescription = "Settings", tint = Color.White)
-                }
-            }
+            TopAppBar(
+                title = { Text("Zin SafeNet V2", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onBackground) },
+                actions = {
+                    IconButton(onClick = onNavigateToSettings) {
+                        Icon(Icons.Default.Settings, contentDescription = "Settings", tint = MaterialTheme.colorScheme.onBackground)
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
+            )
         }
     ) { paddingValues ->
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(bgColor, Color(0xFF000000))
-                    )
-                ),
-            contentAlignment = Alignment.Center
+                .padding(horizontal = 24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.SpaceBetween
         ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
-                modifier = Modifier.fillMaxWidth()
-            ) {
+            
+            // Top Section: Error Messages if any
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 if (uiState.errorMessage != null) {
                     Text(
                         text = uiState.errorMessage!!,
-                        color = Color(0xFFEF4444),
+                        color = MaterialTheme.colorScheme.error,
                         modifier = Modifier.padding(16.dp)
                     )
                     Button(
                         onClick = { viewModel.fetchServers() },
-                        colors = ButtonDefaults.buttonColors(containerColor = accentColor),
-                        modifier = Modifier.padding(bottom = 24.dp)
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                     ) {
                         Text("Retry")
                     }
                 }
-                
-                // Connection Status Text
-                Text(
-                    text = when(uiState.vpnState) {
-                        VpnState.CONNECTED -> "CONNECTED"
-                        VpnState.CONNECTING -> "CONNECTING..."
-                        VpnState.DISCONNECTED -> "NOT CONNECTED"
-                        else -> "DISCONNECTED"
-                    },
-                    color = when(uiState.vpnState) {
-                        VpnState.CONNECTED -> Color(0xFF10B981) // Emerald 500
-                        VpnState.CONNECTING -> accentColor
-                        else -> Color.Gray
-                    },
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 2.sp
-                )
-                
-                Spacer(modifier = Modifier.height(40.dp))
+            }
 
-                // Big Connect/Disconnect Button
+            // Middle Section: The Giant Connect Button
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+                modifier = Modifier.weight(1f)
+            ) {
                 ConnectButton(
                     vpnState = uiState.vpnState,
-                    accentColor = accentColor,
-                    secondaryAccent = secondaryAccent,
                     onClick = {
                         if (uiState.vpnState == VpnState.CONNECTED || uiState.vpnState == VpnState.CONNECTING) {
                             viewModel.disconnect()
@@ -142,13 +106,34 @@ fun HomeScreen(
                         }
                     }
                 )
+                
+                Spacer(modifier = Modifier.height(32.dp))
+                
+                // Connection Status Text
+                Text(
+                    text = when(uiState.vpnState) {
+                        VpnState.CONNECTED -> "Your connection is protected"
+                        VpnState.CONNECTING -> "Connecting..."
+                        VpnState.DISCONNECTED -> "Not connected"
+                        else -> "Disconnected"
+                    },
+                    color = when(uiState.vpnState) {
+                        VpnState.CONNECTED -> MaterialTheme.colorScheme.tertiary
+                        VpnState.CONNECTING -> MaterialTheme.colorScheme.primary
+                        else -> MaterialTheme.colorScheme.onSurfaceVariant
+                    },
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
 
-                Spacer(modifier = Modifier.height(60.dp))
-
-                // Server Selector Dropdown
+            // Bottom Section: Server Selection
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 32.dp)
+            ) {
                 ServerSelector(
-                    surfaceColor = surfaceColor,
-                    accentColor = accentColor,
                     selectedServer = uiState.selectedServerName,
                     onClick = { showServerSelector = true }
                 )
@@ -159,29 +144,29 @@ fun HomeScreen(
         if (showServerSelector) {
             ModalBottomSheet(
                 onDismissRequest = { showServerSelector = false },
-                containerColor = Color(0xFF1E293B),
+                containerColor = MaterialTheme.colorScheme.surface,
             ) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp)
+                        .padding(24.dp)
                 ) {
                     Text(
-                        "Select Free Server",
+                        "Select Server",
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.padding(bottom = 16.dp)
                     )
                     
                     if (uiState.availableServers.isEmpty() && uiState.errorMessage == null) {
-                        CircularProgressIndicator(color = accentColor, modifier = Modifier.align(Alignment.CenterHorizontally))
+                        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary, modifier = Modifier.align(Alignment.CenterHorizontally))
                     } else if (uiState.availableServers.isEmpty() && uiState.errorMessage != null) {
-                        Text("No servers available.", color = Color.Gray)
+                        Text("No servers available.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     } else {
                         uiState.availableServers.forEach { server ->
                             ServerItem(
-                                name = server.name,
+                                name = server.name.replace(" Free", "").replace(" Premium", ""),
                                 protocol = server.protocol,
                                 isSelected = uiState.selectedServerId == server.id,
                                 onClick = {
@@ -201,119 +186,103 @@ fun HomeScreen(
 @Composable
 fun ConnectButton(
     vpnState: VpnState,
-    accentColor: Color,
-    secondaryAccent: Color,
     onClick: () -> Unit
 ) {
     val isConnected = vpnState == VpnState.CONNECTED
     val isConnecting = vpnState == VpnState.CONNECTING
 
-    // Animations
+    // Pulse Animation
     val infiniteTransition = rememberInfiniteTransition()
-    val pulseRadius by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = if (isConnected || isConnecting) 60f else 0f,
+    val pulseScale by infiniteTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = if (isConnecting) 1.15f else 1f,
         animationSpec = infiniteRepeatable(
-            animation = tween(1500, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
-        )
-    )
-    val pulseAlpha by infiniteTransition.animateFloat(
-        initialValue = 0.5f,
-        targetValue = 0f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1500, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
+            animation = tween(1000, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
         )
     )
 
     val buttonColor by animateColorAsState(
-        targetValue = if (isConnected) Color(0xFF10B981) else if (isConnecting) accentColor else Color(0xFF334155),
+        targetValue = when {
+            isConnected -> MaterialTheme.colorScheme.tertiary // Green
+            isConnecting -> MaterialTheme.colorScheme.primary // Vibrant Teal
+            else -> MaterialTheme.colorScheme.surfaceVariant // Gray/Dark Blue
+        },
+        animationSpec = tween(500)
+    )
+    
+    val iconTint by animateColorAsState(
+        targetValue = if (isConnected || isConnecting) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
         animationSpec = tween(500)
     )
 
     Box(
         contentAlignment = Alignment.Center,
-        modifier = Modifier.size(240.dp)
+        modifier = Modifier
+            .size(180.dp)
+            .shadow(
+                elevation = if (isConnected || isConnecting) 24.dp else 8.dp,
+                shape = CircleShape,
+                spotColor = buttonColor
+            )
+            .clip(CircleShape)
+            .background(buttonColor)
+            .clickable { onClick() }
+            .padding(16.dp)
     ) {
-        // Pulse effect
-        if (isConnected || isConnecting) {
-            Canvas(modifier = Modifier.fillMaxSize()) {
-                drawCircle(
-                    brush = Brush.radialGradient(
-                        colors = listOf(buttonColor.copy(alpha = pulseAlpha), Color.Transparent)
-                    ),
-                    radius = size.minDimension / 2 + pulseRadius
-                )
-            }
-        }
-
-        // Main Button
+        // Inner circle for Amnezia look
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
-                .size(160.dp)
-                .shadow(
-                    elevation = if (isConnected) 20.dp else 10.dp,
-                    shape = CircleShape,
-                    spotColor = buttonColor
-                )
+                .fillMaxSize()
                 .clip(CircleShape)
-                .background(
-                    Brush.linearGradient(
-                        colors = if (isConnected) listOf(Color(0xFF34D399), Color(0xFF059669)) 
-                                 else listOf(buttonColor, buttonColor.copy(alpha = 0.8f))
-                    )
-                )
-                .clickable { onClick() }
+                .background(Color.White.copy(alpha = 0.1f))
         ) {
-            // Inner ring
-            Canvas(modifier = Modifier.fillMaxSize()) {
-                drawCircle(
-                    color = Color.White.copy(alpha = 0.2f),
-                    radius = size.minDimension / 2 - 10f,
-                    style = Stroke(width = 4f)
-                )
-            }
-            
-            // Icon or Text
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(
-                    text = if (isConnected) "CONNECTED" else "OPEN IN\nVPN APP",
-                    color = Color.White,
-                    fontSize = if (isConnected) 20.sp else 18.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    letterSpacing = 1.sp,
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                )
-            }
+            Icon(
+                imageVector = Icons.Default.PowerSettingsNew,
+                contentDescription = "Power",
+                tint = iconTint,
+                modifier = Modifier.size(64.dp * pulseScale)
+            )
         }
     }
 }
 
 @Composable
 fun ServerSelector(
-    surfaceColor: Color,
-    accentColor: Color,
     selectedServer: String,
     onClick: () -> Unit
 ) {
-    Row(
+    Card(
         modifier = Modifier
-            .fillMaxWidth(0.8f)
-            .clip(RoundedCornerShape(16.dp))
-            .background(surfaceColor)
-            .clickable { onClick() }
-            .padding(horizontal = 20.dp, vertical = 16.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+            .fillMaxWidth()
+            .clickable { onClick() },
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
-        Column {
-            Text("Current Server", color = Color.Gray, fontSize = 12.sp)
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(selectedServer, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+        Row(
+            modifier = Modifier.padding(20.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(Icons.Default.Language, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                }
+                Spacer(modifier = Modifier.width(16.dp))
+                Column {
+                    Text(selectedServer.ifEmpty { "Select Server" }, color = MaterialTheme.colorScheme.onSurface, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text("Tap to change location", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+                }
+            }
         }
-        Icon(Icons.Default.ArrowDropDown, contentDescription = "Select Server", tint = accentColor)
     }
 }
 
@@ -328,23 +297,24 @@ fun ServerItem(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp)
-            .clip(RoundedCornerShape(12.dp))
-            .background(if (isSelected) Color(0xFF334155) else Color.Transparent)
+            .clip(RoundedCornerShape(16.dp))
+            .background(if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f) else Color.Transparent)
             .clickable { onClick() }
             .padding(16.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column {
-            Text(name, color = Color.White, fontWeight = FontWeight.SemiBold)
-            Text(protocol, color = Color.Gray, fontSize = 12.sp)
+            Text(name, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold)
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(protocol, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
         }
         if (isSelected) {
             Box(
                 modifier = Modifier
                     .size(12.dp)
                     .clip(CircleShape)
-                    .background(Color(0xFF06B6D4)) // Cyan
+                    .background(MaterialTheme.colorScheme.primary)
             )
         }
     }

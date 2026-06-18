@@ -7,17 +7,9 @@ import androidx.room.PrimaryKey
 data class ServerEntity(
     @PrimaryKey val id: String,
     val name: String,
-    val countryCode: String,
-    val countryName: String,
-    val city: String?,
-    val host: String,
-    val port: Int,
-    val protocols: String, // comma-separated
-    val latencyMs: Int,
-    val loadPercent: Int,
-    val isRecommended: Boolean,
-    val isPremium: Boolean,
-    val status: String,
+    val protocol: String,
+    val config: String,
+    val savedAt: Long,
 )
 
 @Entity(tableName = "cached_keys")

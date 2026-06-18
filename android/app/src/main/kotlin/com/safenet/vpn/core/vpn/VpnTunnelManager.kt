@@ -80,8 +80,9 @@ class VpnTunnelManager @Inject constructor(
      * @param vpnUri The VPN URI (hysteria2://, vless://, ss://)
      * @return true if the config was valid and the service was started
      */
-    fun connect(vpnUri: String): Boolean {
-        val configJson = VpnConfigConverter.toSingBoxConfig(vpnUri)
+    fun connect(vpnUri: String, serverName: String): Boolean {
+        val cacheFilePath = context.cacheDir.absolutePath + "/cache.db"
+        val configJson = VpnConfigConverter.toSingBoxConfig(vpnUri, cacheFilePath)
         if (configJson == null) {
             _errorMessage.update { "Failed to parse VPN config" }
             _vpnState.update { VpnState.ERROR }
@@ -94,9 +95,21 @@ class VpnTunnelManager @Inject constructor(
         val serviceIntent = Intent(context, VpnTunnelService::class.java).apply {
             action = VpnTunnelService.ACTION_START
             putExtra(VpnTunnelService.EXTRA_CONFIG, configJson)
+            putExtra(VpnTunnelService.EXTRA_SERVER_NAME, serverName)
         }
-        context.startForegroundService(serviceIntent)
-        Log.i(TAG, "Connecting via: ${vpnUri.substringBefore("://")}")
+        try {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                context.startForegroundService(serviceIntent)
+            } else {
+                context.startService(serviceIntent)
+            }
+            Log.i(TAG, "Connecting to $serverName via: ${vpnUri.substringBefore("://")}")
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to start VPN service: ${e.message}", e)
+            _errorMessage.update { "Service start failed: ${e.message}" }
+            _vpnState.update { VpnState.ERROR }
+            return false
+        }
         return true
     }
 

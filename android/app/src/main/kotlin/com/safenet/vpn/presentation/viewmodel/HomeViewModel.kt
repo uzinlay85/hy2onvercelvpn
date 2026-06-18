@@ -3,12 +3,15 @@ package com.safenet.vpn.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.safenet.vpn.core.vpn.VpnTunnelManager
+import com.safenet.vpn.data.local.dao.SafeNetDao
+import com.safenet.vpn.data.local.entity.ServerEntity
 import com.safenet.vpn.data.remote.VercelApiService
 import com.safenet.vpn.domain.model.VpnState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
@@ -38,6 +41,7 @@ data class HomeUiState(
 class HomeViewModel @Inject constructor(
     private val vercelApiService: VercelApiService,
     private val vpnTunnelManager: VpnTunnelManager,
+    private val dao: SafeNetDao,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState())
@@ -66,21 +70,41 @@ class HomeViewModel @Inject constructor(
                     val servers = res.body()?.servers?.map {
                         FreeServer(it.id, it.name, it.protocol, it.config)
                     } ?: emptyList()
-                    _uiState.update {
-                        it.copy(
-                            isLoadingServers = false,
-                            availableServers = servers,
-                            selectedServerId = servers.firstOrNull()?.id ?: "",
-                            selectedServerName = servers.firstOrNull()?.name ?: "No Server",
-                            selectedProtocol = servers.firstOrNull()?.protocol ?: "",
-                        )
-                    }
+                    
+                    // Cache to DB
+                    dao.clearServers()
+                    dao.insertServers(servers.map { ServerEntity(it.id, it.name, it.protocol, it.config, System.currentTimeMillis()) })
+
+                    updateServersList(servers)
                 } else {
-                    _uiState.update { it.copy(isLoadingServers = false, errorMessage = "Failed to load servers") }
+                    loadCachedServers("Failed to load servers from remote")
                 }
             } catch (e: Exception) {
-                _uiState.update { it.copy(isLoadingServers = false, errorMessage = "Network error: ${e.message}") }
+                loadCachedServers("Network error: ${e.message}")
             }
+        }
+    }
+
+    private suspend fun loadCachedServers(errorMsg: String) {
+        val cached = dao.getServersFlow().firstOrNull() ?: emptyList()
+        if (cached.isNotEmpty()) {
+            val servers = cached.map { FreeServer(it.id, it.name, it.protocol, it.config) }
+            updateServersList(servers)
+            _uiState.update { it.copy(errorMessage = "Using cached servers ($errorMsg)") }
+        } else {
+            _uiState.update { it.copy(isLoadingServers = false, errorMessage = errorMsg) }
+        }
+    }
+
+    private fun updateServersList(servers: List<FreeServer>) {
+        _uiState.update {
+            it.copy(
+                isLoadingServers = false,
+                availableServers = servers,
+                selectedServerId = servers.firstOrNull()?.id ?: "",
+                selectedServerName = servers.firstOrNull()?.name ?: "No Server",
+                selectedProtocol = servers.firstOrNull()?.protocol ?: "",
+            )
         }
     }
 
@@ -95,6 +119,10 @@ class HomeViewModel @Inject constructor(
         }
     }
 
+    fun selectProtocol(protocolId: String) {
+        _uiState.update { it.copy(selectedProtocol = protocolId) }
+    }
+
     fun connect() {
         val server = _uiState.value.availableServers
             .find { it.id == _uiState.value.selectedServerId } ?: return
@@ -104,14 +132,15 @@ class HomeViewModel @Inject constructor(
             // Need VPN permission from Android OS — signal Activity
             _uiState.update { it.copy(needsVpnPermission = true, pendingVpnUri = server.config) }
         } else {
-            doConnect(server.config)
+            doConnect(server.config, server.name)
         }
     }
 
     fun onVpnPermissionGranted() {
         val uri = _uiState.value.pendingVpnUri ?: return
+        val name = _uiState.value.selectedServerName
         _uiState.update { it.copy(needsVpnPermission = false, pendingVpnUri = null) }
-        doConnect(uri)
+        doConnect(uri, name)
     }
 
     fun onVpnPermissionDenied() {
@@ -124,8 +153,8 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    private fun doConnect(vpnUri: String) {
-        val ok = vpnTunnelManager.connect(vpnUri)
+    private fun doConnect(vpnUri: String, serverName: String) {
+        val ok = vpnTunnelManager.connect(vpnUri, serverName)
         if (!ok) _uiState.update { it.copy(errorMessage = "Invalid VPN config") }
     }
 

@@ -14,59 +14,63 @@ import androidx.core.view.WindowCompat
 
 // ── SafeNet Color Palette ─────────────────────────────────────────────────────
 
-private val SafeNetBlue = Color(0xFF0EA5E9)       // Primary
-private val SafeNetBlueDeep = Color(0xFF0369A1)
-private val SafeNetBlueDark = Color(0xFF0C4A6E)
-private val SafeNetBlueBright = Color(0xFF38BDF8)
+private val VibrantTeal = Color(0xFF14B8A6)
+private val VibrantTealDark = Color(0xFF0F766E)
+private val VibrantTealBright = Color(0xFF5EEAD4)
 
-private val SafeNetGreen = Color(0xFF22C55E)
-private val SafeNetRed = Color(0xFFEF4444)
+private val CalmBlue = Color(0xFF3B82F6)
+private val DeepSpace = Color(0xFF0B1120)
+private val SurfaceDark = Color(0xFF111827)
+private val SurfaceVariantDark = Color(0xFF1F2937)
+
+private val SafeNetGreen = Color(0xFF10B981)
+private val SafeNetRed = Color(0xFFF43F5E)
 private val SafeNetAmber = Color(0xFFF59E0B)
 
 // Dark theme (primary)
 private val DarkColorScheme = darkColorScheme(
-    primary = SafeNetBlue,
+    primary = VibrantTeal,
     onPrimary = Color.White,
-    primaryContainer = SafeNetBlueDark,
-    onPrimaryContainer = SafeNetBlueBright,
+    primaryContainer = VibrantTealDark,
+    onPrimaryContainer = VibrantTealBright,
 
-    secondary = Color(0xFF1E3A5F),
+    secondary = CalmBlue,
     onSecondary = Color.White,
-    secondaryContainer = Color(0xFF0D2137),
-    onSecondaryContainer = SafeNetBlueBright,
+    secondaryContainer = Color(0xFF1E3A8A),
+    onSecondaryContainer = Color(0xFFBFDBFE),
 
     tertiary = SafeNetGreen,
     onTertiary = Color.White,
 
-    background = Color(0xFF060C14),
-    onBackground = Color(0xFFF1F5F9),
+    background = DeepSpace,
+    onBackground = Color(0xFFF8FAFC),
 
-    surface = Color(0xFF0B1522),
-    onSurface = Color(0xFFF1F5F9),
-    surfaceVariant = Color(0xFF132030),
-    onSurfaceVariant = Color(0xFF94A3B8),
+    surface = SurfaceDark,
+    onSurface = Color(0xFFF8FAFC),
+    surfaceVariant = SurfaceVariantDark,
+    onSurfaceVariant = Color(0xFF9CA3AF),
 
     error = SafeNetRed,
     onError = Color.White,
 
-    outline = Color(0xFF1E3A5F),
-    outlineVariant = Color(0xFF0F1F30),
+    outline = Color(0xFF374151),
+    outlineVariant = Color(0xFF1F2937),
 )
 
 // Light theme
 private val LightColorScheme = lightColorScheme(
-    primary = Color(0xFF0284C7),
+    primary = Color(0xFF0D9488),
     onPrimary = Color.White,
-    primaryContainer = Color(0xFFE0F2FE),
-    onPrimaryContainer = SafeNetBlueDark,
+    primaryContainer = Color(0xFFCCFBF1),
+    onPrimaryContainer = VibrantTealDark,
 
-    secondary = Color(0xFF0369A1),
+    secondary = Color(0xFF2563EB),
     onSecondary = Color.White,
 
     background = Color(0xFFF8FAFC),
     onBackground = Color(0xFF0F172A),
 
-    surface = Color(0xFFFFFFFF),
+    surface = Color.White,
     onSurface = Color(0xFF0F172A),
     surfaceVariant = Color(0xFFF1F5F9),
     onSurfaceVariant = Color(0xFF475569),

@@ -7,9 +7,14 @@ import android.app.PendingIntent
 import android.content.Intent
 import android.net.VpnService
 import android.os.Build
+import android.os.IBinder
 import android.util.Log
+import androidx.core.app.NotificationCompat
 import com.safenet.vpn.MainActivity
 import com.safenet.vpn.R
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 /**
  * Android VpnService that manages the sing-box VPN tunnel.
@@ -24,6 +29,7 @@ class VpnTunnelService : VpnService() {
         const val EXTRA_CONFIG = "vpn_config_json"
         const val BROADCAST_STATE = "com.safenet.vpn.STATE"
         const val EXTRA_STATE = "state"
+        const val EXTRA_SERVER_NAME = "server_name"
         const val STATE_CONNECTED    = "CONNECTED"
         const val STATE_DISCONNECTED = "DISCONNECTED"
         const val STATE_ERROR        = "ERROR"
@@ -33,6 +39,7 @@ class VpnTunnelService : VpnService() {
     }
 
     private var boxService: Any? = null  // sing-box service instance (libbox)
+    private var activeTunFd: android.os.ParcelFileDescriptor? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
@@ -42,7 +49,8 @@ class VpnTunnelService : VpnService() {
                     stopSelf()
                     return START_NOT_STICKY
                 }
-                startVpnTunnel(config)
+                val serverName = intent.getStringExtra(EXTRA_SERVER_NAME) ?: "Unknown Server"
+                startVpnTunnel(config, serverName)
             }
             ACTION_STOP -> {
                 stopVpnTunnel()
@@ -51,14 +59,27 @@ class VpnTunnelService : VpnService() {
         return START_STICKY
     }
 
-    private fun startVpnTunnel(configJson: String) {
+    private fun startVpnTunnel(configJson: String, serverName: String) {
         try {
             Log.i(TAG, "Starting VPN tunnel...")
-            startForeground(NOTIF_ID, buildNotification())
+            try {
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                    startForeground(NOTIF_ID, buildNotification(serverName), android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
+                } else {
+                    startForeground(NOTIF_ID, buildNotification(serverName))
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to startForeground natively: ${e.message}", e)
+                try {
+                    startForeground(NOTIF_ID, buildNotification(serverName))
+                } catch (e2: Exception) {
+                    Log.w(TAG, "Failed fallback startForeground: ${e2.message}", e2)
+                }
+            }
 
             // Build TUN interface using Android VpnService.Builder
             val builder = Builder()
-                .setSession("SafeNet VPN")
+                .setSession("Zin SafeNet V2")
                 .addAddress("172.19.0.2", 30)
                 .addAddress("fdfe:dcba:9876::2", 126)
                 .addDnsServer("1.1.1.1")
@@ -67,18 +88,33 @@ class VpnTunnelService : VpnService() {
                 .addRoute("::", 0)
                 .setMtu(9000)
 
-            val tunFd = builder.establish()
-                ?: throw IllegalStateException("VpnService.Builder.establish() returned null — VPN permission denied?")
+            activeTunFd = builder.establish()
+            if (activeTunFd == null) {
+                broadcastError("VPN authorization missing or rejected")
+                stopSelf()
+                return
+            }
 
-            // Start sing-box engine with the TUN fd and config
-            SingBoxBridge.start(tunFd.detachFd(), configJson)
-
-            broadcastState(STATE_CONNECTED)
-            Log.i(TAG, "VPN tunnel started successfully")
+            // Start sing-box using our bridge in a background thread!
+            CoroutineScope(Dispatchers.IO).launch {
+                try {
+                    // We broadcast connected first, because start() blocks the thread indefinitely!
+                    broadcastState(STATE_CONNECTED)
+                    Log.i(TAG, "VPN tunnel started successfully")
+                    
+                    SingBoxBridge.start(activeTunFd!!.fd, configJson, this@VpnTunnelService)
+                } catch (e: Exception) {
+                    val cause = if (e is java.lang.reflect.InvocationTargetException) e.cause ?: e else e
+                    Log.e(TAG, "Failed to start sing-box inside coroutine", cause)
+                    broadcastError(cause.message ?: "Failed to start sing-box")
+                    stopSelf()
+                }
+            }
 
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to start VPN tunnel", e)
-            broadcastError(e.message ?: "Unknown error")
+            val cause = if (e is java.lang.reflect.InvocationTargetException) e.cause ?: e else e
+            Log.e(TAG, "Failed to initialize VPN tunnel", cause)
+            broadcastError(cause.message ?: "Unknown error")
             stopSelf()
         }
     }
@@ -90,6 +126,12 @@ class VpnTunnelService : VpnService() {
         } catch (e: Exception) {
             Log.w(TAG, "Error stopping sing-box", e)
         }
+        try {
+            activeTunFd?.close()
+            activeTunFd = null
+        } catch (e: Exception) {
+            Log.w(TAG, "Error closing TUN interface", e)
+        }
         broadcastState(STATE_DISCONNECTED)
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
@@ -97,12 +139,13 @@ class VpnTunnelService : VpnService() {
 
     override fun onDestroy() {
         runCatching { SingBoxBridge.stop() }
+        runCatching { activeTunFd?.close(); activeTunFd = null }
         broadcastState(STATE_DISCONNECTED)
         super.onDestroy()
     }
 
     // ── Notifications ─────────────────────────────────────────────────────────
-    private fun buildNotification(): Notification {
+    private fun buildNotification(serverName: String): Notification {
         createNotifChannel()
         val openIntent = Intent(this, MainActivity::class.java)
         val pi = PendingIntent.getActivity(this, 0, openIntent,
@@ -112,8 +155,8 @@ class VpnTunnelService : VpnService() {
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
 
         return Notification.Builder(this, NOTIF_CHANNEL)
-            .setContentTitle("SafeNet VPN")
-            .setContentText("VPN tunnel is active")
+            .setContentTitle("Zin SafeNet V2")
+            .setContentText("Connected to: $serverName")
             .setSmallIcon(R.drawable.ic_safenet_logo)
             .setContentIntent(pi)
             .setOngoing(true)
@@ -126,7 +169,7 @@ class VpnTunnelService : VpnService() {
         if (mgr.getNotificationChannel(NOTIF_CHANNEL) != null) return
         val ch = NotificationChannel(
             NOTIF_CHANNEL,
-            "SafeNet VPN",
+            "Zin SafeNet V2",
             NotificationManager.IMPORTANCE_LOW
         ).apply {
             description = "VPN connection status"
@@ -137,17 +180,19 @@ class VpnTunnelService : VpnService() {
 
     // ── Broadcast helpers ─────────────────────────────────────────────────────
     private fun broadcastState(state: String) {
-        sendBroadcast(Intent(BROADCAST_STATE).apply {
-            putExtra(EXTRA_STATE, state)
+        val intent = Intent(BROADCAST_STATE).apply {
             setPackage(packageName)
-        })
+            putExtra(EXTRA_STATE, state)
+        }
+        sendBroadcast(intent)
     }
 
     private fun broadcastError(msg: String) {
-        sendBroadcast(Intent(BROADCAST_STATE).apply {
+        val intent = Intent(BROADCAST_STATE).apply {
+            setPackage(packageName)
             putExtra(EXTRA_STATE, STATE_ERROR)
             putExtra(EXTRA_ERROR_MSG, msg)
-            setPackage(packageName)
-        })
+        }
+        sendBroadcast(intent)
     }
 }

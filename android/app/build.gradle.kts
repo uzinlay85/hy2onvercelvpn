@@ -19,11 +19,11 @@ android {
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.zinsafenet.app"
+        applicationId = "com.zinsafenet.v2"
         minSdk = 26  // Android 8.0+
         targetSdk = 35
-        versionCode = 17
-        versionName = "1.0.15"
+        versionCode = 1
+        versionName = "1.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables { useSupportLibrary = true }
@@ -33,7 +33,7 @@ android {
         buildConfigField("String", "WS_BASE_URL", "\"wss://safenetapp.truehand.top\"")
         buildConfigField("String", "VERCEL_API_URL", "\"https://hy2onvercelvpn.vercel.app/api/\"")
         buildConfigField("String", "API_CERT_PIN_SHA256", quotedBuildConfigString(safenetApiCertPin))
-        buildConfigField("String", "APP_NAME", "\"SafeNet VPN\"")
+        buildConfigField("String", "APP_NAME", "\"Zin SafeNet V2\"")
     }
 
     signingConfigs {
@@ -143,6 +143,9 @@ dependencies {
     implementation(libs.retrofit.gson)
     implementation(libs.okhttp)
     implementation(libs.okhttp.logging)
+
+    // Sing-box Native Engine
+    implementation(files("libs/libbox.aar"))
 
     // DataStore
     implementation(libs.datastore.preferences)
