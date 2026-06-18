@@ -19,6 +19,8 @@ redis_data
 *.pem
 *.key
 *.crt
+apk_key/
+hy2keyfile
 
 # OS metadata
 .DS_Store
